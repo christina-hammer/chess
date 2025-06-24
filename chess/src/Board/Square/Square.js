@@ -5,16 +5,23 @@ export const colors =  {
     WHITE: "white"
 };
 
-export default function Square(color, name, piece) {
+export default function Square(sq) {
     return (
-        <div className = {squareClass()}>
-            {name}
+        <div>
+            <div className = {squareClass(sq)}> 
+                {sq.name}
+            </div>
+            
         </div>
     );
 
 
-    function squareClass() {
-        return "square " + color;
+    function squareClass(sq) {
+        
+        if (sq.color === colors.BLACK) {
+            return "square " + "black"
+        }
+        return "square " + "white";
     }
 
 

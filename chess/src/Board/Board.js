@@ -8,9 +8,9 @@ export default function Board() {
 
     return (
         <div>
-            {squares.map((row, rowIndex)=> (
-                <div className="d-flex flex-row">
-                    {row.map((square, squareCol) => (
+            {squares.map((row)=> (
+                <div className="d-flex">
+                    {row.map((square) => (
                         <Square 
                             color = {square.color}
                             name = {square.name}
@@ -50,10 +50,10 @@ export default function Board() {
 
     function getSquareColor(row, column) {
         if (row%2 === 0) {
-            return col%2 === 0 ? colors.WHITE : colors.BLACK;
+            return column%2 === 0 ? colors.WHITE : colors.BLACK;
         }
         else {
-            return col%2 === 0 ? colors.BLACK : colors.WHITE;
+            return column%2 === 0 ? colors.BLACK : colors.WHITE;
         }
     }
 

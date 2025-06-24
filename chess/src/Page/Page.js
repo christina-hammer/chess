@@ -1,10 +1,10 @@
-
+import Board from "../Board/Board.js"
 
 export default function Page() {
 
     return (
-        <div className = "page">
-            Page
+        <div>
+            <Board/>
         </div>
     );
 }
