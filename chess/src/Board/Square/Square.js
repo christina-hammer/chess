@@ -11,7 +11,7 @@ export const colors =  {
 export default function Square(sq) {
 
     const handleClick = () => {
-        sq.selectSquare(sq.position, sq.piece);
+        sq.selectSquare(sq);
     };
 
     return (
