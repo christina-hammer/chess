@@ -1,10 +1,29 @@
 import Square, {colors} from "./Square/Square.js";
 import { columnToLetter, rowToNumber } from "./SquareNameMap.js";
 import { useState } from 'react';
+import { InitialPiecePositionMap } from "./InitialPiecePositionMap.js";
 
 export default function Board() {
 
     const [squares, setSquares] = useState(getNewBoard());
+
+    const selectSquare = (position, piece) => {
+        const newSquares = squares.map((row) => 
+            row.map((square) => {
+                if (square.position === position) {
+                    return {...square, selected: !square.selected};
+                }
+                else if (isPossibleCapture(square, position, piece)) {
+                    return {...square, possibleCapture: true};
+                }
+                else if (isPossibleMove(square, position, piece)) {
+                    return {...square, possibleMove: true};
+                }
+                return {...square, selected: false};
+            })
+        );
+        setSquares(newSquares);
+    }
 
     return (
         <div>
@@ -13,8 +32,12 @@ export default function Board() {
                     {row.map((square) => (
                         <Square 
                             color = {square.color}
-                            name = {square.name}
-                            piece = {square.piece} />
+                            position = {square.position}
+                            selected = {square.selected}
+                            piece = {square.piece} 
+                            possibleMove = {square.possibleMove}
+                            possibleCapture = {square.possibleCapture}
+                            selectSquare={selectSquare}/>
                     ))}
                 </div>
             ))}
@@ -38,13 +61,16 @@ export default function Board() {
     function getNewSquare(row, column) {
 
         let color = getSquareColor(row, column);
-        let name = getSquareName(row, column);
+        let name = getSquarePosition(row, column);
 
         return {
             id: row*10 + column,
-            name: name,
+            position: name,
             color: color,
-            piece: null
+            selected: false,
+            possibleMove: false,
+            possibleCapture: false,
+            piece: InitialPiecePositionMap[name] || null
         };
     }
 
@@ -57,8 +83,16 @@ export default function Board() {
         }
     }
 
-    function getSquareName(row, column) {
+    function getSquarePosition(row, column) {
         return columnToLetter[column] + rowToNumber[row]
+    }
+
+    function isPossibleCapture(checkSquare, selectedPosition, selectedPiece) {
+        return false;
+    }
+
+    function isPossibleMove(checkSquare, selectedPosition, selectedPiece) {
+        return false;
     }
 
 }

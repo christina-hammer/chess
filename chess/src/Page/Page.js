@@ -1,10 +1,14 @@
 import Board from "../Board/Board.js"
+import "../styles.css";
+
 
 export default function Page() {
 
     return (
         <div>
-            <Board/>
+            <div className="boardContainer">
+                <Board/>
+            </div>
         </div>
     );
 }

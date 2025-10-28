@@ -10,10 +10,42 @@
 
 .black {
     color: white;
-    background-color: black;
+    background-color: hotPink;
 }
 
 .white {
-    background-color: white;
+    background-color: #FFE6E9;
 }
 
+.boardContainer {
+    margin: 12px;
+}
+
+.piece {
+    font-size: 60px;
+    text-align: center;
+    line-height: 80px;
+    cursor: pointer;
+}
+
+.pieceWhite {
+    color: white;
+    text-shadow: 0 0 3px black;
+}
+
+.pieceBlack {
+    color: black;
+    text-shadow: 0 0 3px white;
+}
+
+.selectedSquare {
+    outline: 3px solid yellow;
+}
+
+.possibleMoveSquare {
+    outline: 3px solid green;
+}
+
+.possibleCaptureSquare {
+    outline: 3px solid darkmagenta;
+}
