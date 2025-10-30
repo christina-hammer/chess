@@ -45,11 +45,7 @@ export default function Board() {
             setSquares(newSquares);
 
             deselectSquare();
-
-
         }
-
-        
     }
 
     return (
@@ -137,29 +133,29 @@ export default function Board() {
                     isFirstMove = true;
                 }
 
-                setPossiblePawnMoves(selectedPosition, selectedPiece.color, squares, isFirstMove);
+                setPossiblePawnMoves(selectedPosition, selectedPiece.color, isFirstMove);
                 break;
             case PieceType.KNIGHT:
-                setPossibleKnightMoves(selectedPosition, selectedPiece.color, squares);
+                setPossibleKnightMoves(selectedPosition, selectedPiece.color);
                 break;
             case PieceType.BISHOP:
-                setPossibleBishopMoves(selectedPosition, selectedPiece.color, squares);
+                setPossibleBishopMoves(selectedPosition, selectedPiece.color);
                 break;
             case PieceType.ROOK:
-                setPossibleRookMoves(selectedPosition, selectedPiece.color, squares);
+                setPossibleRookMoves(selectedPosition, selectedPiece.color);
                 break;
             case PieceType.QUEEN:
-                setPossibleQueenMoves(selectedPosition, selectedPiece.color, squares);
+                setPossibleQueenMoves(selectedPosition, selectedPiece.color);
                 break;
             case PieceType.KING:
-                setPossibleKingMoves(selectedPosition, selectedPiece.color, squares);
+                setPossibleKingMoves(selectedPosition, selectedPiece.color);
                 break;
             default:
                 return
         }
     }
 
-    function setPossiblePawnMoves(position, pieceColor, squares, isFirstMove) {
+    function setPossiblePawnMoves(position, pieceColor, isFirstMove) {
     
         let moves = new Set();
         let captures = new Set();
@@ -220,24 +216,155 @@ export default function Board() {
         setPossibleCaptures(captures);
     }
 
-    function setPossibleKnightMoves(position, pieceColor, squares) {
+    function setPossibleKnightMoves(position, pieceColor) {
+        
+        let reachablePositions = [
+            {row: position.row - 2, column: position.column - 1},
+            {row: position.row - 2, column: position.column + 1},
+            {row: position.row - 1, column: position.column + 2},
+            {row: position.row + 1, column: position.column + 2},
+            {row: position.row + 2, column: position.column + 1},
+            {row: position.row + 2, column: position.column - 1},
+            {row: position.row + 1, column: position.column - 2},
+            {row: position.row - 1, column: position.column - 2}
+        ];
+
+        let moves = new Set();
+        let captures = new Set();
+
+        for (let pos of reachablePositions) {
+            if (pos.row < 0 || pos.row > 7 || pos.column < 0 || pos.column > 7) {
+                continue;
+            }
+
+            if (squares[pos.row][pos.column].piece
+                && squares[pos.row][pos.column].piece.color !== pieceColor
+            ) {
+                captures.add(squares[pos.row][pos.column].name);
+            }
+            else if (!squares[pos.row][pos.column].piece){
+                moves.add(squares[pos.row][pos.column].name);
+            }
+        }
+
+        setPossibleMoves(moves);
+        setPossibleCaptures(captures);
+        
+    }
+
+    function setPossibleBishopMoves(position, pieceColor) {
+
+        let moves = new Set();
+        let captures = new Set();
+
+        let upRight = bishopMoveHelper(position, pieceColor, true, true);
+        let upLeft = bishopMoveHelper(position, pieceColor, true, false);
+        let downRight = bishopMoveHelper(position, pieceColor, false, true);
+        let downLeft = bishopMoveHelper(position, pieceColor, false, false);
+
+        if (upRight.capture) {
+            captures.add(upRight.capture);
+        }
+        if (upLeft.capture) {
+            captures.add(upLeft.capture);
+        }
+        if (downRight.capture) {
+            captures.add(downRight.capture);
+        }
+        if (downLeft.capture) {
+            captures.add(downLeft.capture);
+        }
+
+        if (upRight.moves.length > 0) {
+            moves = moves.union(upRight.moves);
+        }
+        if (upLeft.moves.length > 0) {
+            moves = moves.union(upLeft.moves);
+        }
+        if (downRight.moves.length > 0) {
+            moves = moves.union(downRight.moves);
+        }
+        if (downLeft.moves.length > 0) {
+            moves = moves.union(downLeft.moves);
+        }
+
+        setPossibleMoves(moves);
+        setPossibleCaptures(captures);
+
+    }
+
+    function bishopMoveHelper(position, pieceColor, goingUp, goingRight) {
+        let moves = new Set();
+        let capture = null;
+
+        let i = 1;
+        let r = goingUp ? position.row - i : position.row + i;
+        let c = goingRight ? position.column + i : position.column - i;
+
+        while (isOnBoard(r, c) && !squares[r][c].piece) {
+            moves.add(squares[r][c]);
+            i++;
+            r = goingUp ? position.row - i : position.row + i;
+            c = goingRight ? position.column + i : position.column - i;
+        }
+
+        if (hasCapture(r, c, pieceColor)) {
+            capture = squares[r][c].name;
+        }
+
+
+        return {moves: moves, capture: capture}
+    }
+
+    function setPossibleRookMoves(position, pieceColor) {
         return new Set();
     }
 
-    function setPossibleBishopMoves(position, pieceColor, squares) {
+    function setPossibleQueenMoves(position, pieceColor) {
         return new Set();
     }
 
-    function setPossibleRookMoves(position, pieceColor, squares) {
-        return new Set();
+    function setPossibleKingMoves(position, pieceColor) {
+
+         let reachablePositions = [
+            {row: position.row - 1, column: position.column - 1},
+            {row: position.row - 1, column: position.column},
+            {row: position.row - 1, column: position.column + 1},
+            {row: position.row, column: position.column - 1},
+            {row: position.row, column: position.column + 1},
+            {row: position.row + 1, column: position.column - 1},
+            {row: position.row + 1, column: position.column},
+            {row: position.row + 1, column: position.column + 1}
+        ];
+
+        let moves = new Set();
+        let captures = new Set();
+
+        for (let pos of reachablePositions) {
+            if (!isOnBoard(pos.row, pos.column)) {
+                continue;
+            }
+
+            if (squares[pos.row][pos.column].piece
+                && squares[pos.row][pos.column].piece.color !== pieceColor
+            ) {
+                captures.add(squares[pos.row][pos.column].name);
+            }
+            else if (!squares[pos.row][pos.column].piece){
+                moves.add(squares[pos.row][pos.column].name);
+            }
+        }
+
+        setPossibleMoves(moves);
+        setPossibleCaptures(captures);
     }
 
-    function setPossibleQueenMoves(position, pieceColor, squares) {
-        return new Set();
+    function isOnBoard(r, c) {
+        return r >= 0 && r < 8 && c >= 0 && c < 8;
     }
 
-    function setPossibleKingMoves(position, pieceColor, squares) {
-        return new Set();
+    function hasCapture(r, c, pieceColor) {
+        return isOnBoard(r, c) && squares[r][c].piece && squares[r][c].piece.color !== pieceColor;
     }
 
 }
