@@ -5,6 +5,13 @@ import { InitialPiecePositionMap } from "./InitialPiecePositionMap.js";
 import { PieceType } from "./Pieces/PieceType.js";
 import { PieceColor } from "./Pieces/Piece.js";
 
+const moveDirection = {
+    UP: "UP",
+    DOWN: "DOWN",
+    LEFT: "LEFT",
+    RIGHT: "RIGHT"
+};
+
 export default function Board() {
 
     const [squares, setSquares] = useState(getNewBoard());
@@ -121,6 +128,8 @@ export default function Board() {
 
     function setPossibleMovesAndCaptures(selectedPosition, selectedPiece) {
         
+        let movesAndCaptures = {moves: new Set(), captures: new Set()};
+
         switch(selectedPiece.type) {
             case PieceType.PAWN:
                 let isFirstMove = false;
@@ -133,29 +142,32 @@ export default function Board() {
                     isFirstMove = true;
                 }
 
-                setPossiblePawnMoves(selectedPosition, selectedPiece.color, isFirstMove);
+                movesAndCaptures = getPossiblePawnMoves(selectedPosition, selectedPiece.color, isFirstMove);
                 break;
             case PieceType.KNIGHT:
-                setPossibleKnightMoves(selectedPosition, selectedPiece.color);
+                movesAndCaptures = getPossibleKnightMoves(selectedPosition, selectedPiece.color);
                 break;
             case PieceType.BISHOP:
-                setPossibleBishopMoves(selectedPosition, selectedPiece.color);
+                movesAndCaptures = getPossibleBishopMoves(selectedPosition, selectedPiece.color);
                 break;
             case PieceType.ROOK:
-                setPossibleRookMoves(selectedPosition, selectedPiece.color);
+                movesAndCaptures = getPossibleRookMoves(selectedPosition, selectedPiece.color);
                 break;
             case PieceType.QUEEN:
-                setPossibleQueenMoves(selectedPosition, selectedPiece.color);
+                movesAndCaptures = getPossibleQueenMoves(selectedPosition, selectedPiece.color);
                 break;
             case PieceType.KING:
-                setPossibleKingMoves(selectedPosition, selectedPiece.color);
+                movesAndCaptures = getPossibleKingMoves(selectedPosition, selectedPiece.color);
                 break;
             default:
                 return
         }
+
+        setPossibleMoves(movesAndCaptures.moves);
+        setPossibleCaptures(movesAndCaptures.captures);
     }
 
-    function setPossiblePawnMoves(position, pieceColor, isFirstMove) {
+    function getPossiblePawnMoves(position, pieceColor, isFirstMove) {
     
         let moves = new Set();
         let captures = new Set();
@@ -212,11 +224,10 @@ export default function Board() {
             }
         }
         
-        setPossibleMoves(moves);
-        setPossibleCaptures(captures);
+        return { moves: moves, captures: captures };
     }
 
-    function setPossibleKnightMoves(position, pieceColor) {
+    function getPossibleKnightMoves(position, pieceColor) {
         
         let reachablePositions = [
             {row: position.row - 2, column: position.column - 1},
@@ -247,20 +258,19 @@ export default function Board() {
             }
         }
 
-        setPossibleMoves(moves);
-        setPossibleCaptures(captures);
+        return { moves: moves, captures: captures };
         
     }
 
-    function setPossibleBishopMoves(position, pieceColor) {
+    function getPossibleBishopMoves(position, pieceColor) {
 
-        let moves = new Set();
-        let captures = new Set();
 
         let upRight = bishopMoveHelper(position, pieceColor, true, true);
         let upLeft = bishopMoveHelper(position, pieceColor, true, false);
         let downRight = bishopMoveHelper(position, pieceColor, false, true);
         let downLeft = bishopMoveHelper(position, pieceColor, false, false);
+
+         let captures = new Set();
 
         if (upRight.capture) {
             captures.add(upRight.capture);
@@ -275,21 +285,9 @@ export default function Board() {
             captures.add(downLeft.capture);
         }
 
-        if (upRight.moves.length > 0) {
-            moves = moves.union(upRight.moves);
-        }
-        if (upLeft.moves.length > 0) {
-            moves = moves.union(upLeft.moves);
-        }
-        if (downRight.moves.length > 0) {
-            moves = moves.union(downRight.moves);
-        }
-        if (downLeft.moves.length > 0) {
-            moves = moves.union(downLeft.moves);
-        }
+        const moves = new Set([...upRight.moves, ...upLeft.moves, ...downRight.moves, ...downLeft.moves])
 
-        setPossibleMoves(moves);
-        setPossibleCaptures(captures);
+        return { moves: moves, captures: captures };
 
     }
 
@@ -302,7 +300,7 @@ export default function Board() {
         let c = goingRight ? position.column + i : position.column - i;
 
         while (isOnBoard(r, c) && !squares[r][c].piece) {
-            moves.add(squares[r][c]);
+            moves.add(squares[r][c].name);
             i++;
             r = goingUp ? position.row - i : position.row + i;
             c = goingRight ? position.column + i : position.column - i;
@@ -316,15 +314,91 @@ export default function Board() {
         return {moves: moves, capture: capture}
     }
 
-    function setPossibleRookMoves(position, pieceColor) {
-        return new Set();
+    function getPossibleRookMoves(position, pieceColor) {
+        
+        let up = rookMoveHelper(position, pieceColor, moveDirection.UP);
+        let down = rookMoveHelper(position, pieceColor,moveDirection.DOWN);
+        let left = rookMoveHelper(position, pieceColor, moveDirection.LEFT);
+        let right = rookMoveHelper(position, pieceColor, moveDirection.RIGHT);
+
+        let moves = new Set([...up.moves, ...down.moves, ...left.moves, ...right.moves]);
+        let captures = new Set();
+
+        if (up.capture) {
+            captures.add(up.capture);
+        }
+        if (down.capture) {
+            captures.add(down.capture);
+        }
+        if (left.capture) {
+            captures.add(left.capture);
+        }
+        if (right.capture) {
+            captures.add(right.capture);
+        }
+
+        return { moves: moves, captures: captures };
     }
 
-    function setPossibleQueenMoves(position, pieceColor) {
-        return new Set();
+    function rookMoveHelper(position, pieceColor, direction) {
+
+        let moves = new Set();
+        let capture = null;
+
+        let checkPosition = {
+            row: position.row,
+            column: position.column
+        };
+
+        checkPosition = moveInDirection(checkPosition, direction);
+
+        while (isOnBoard(checkPosition.row, checkPosition.column)
+            && !squares[checkPosition.row][checkPosition.column].piece) {
+                moves.add(squares[checkPosition.row][checkPosition.column].name);
+                checkPosition = moveInDirection(checkPosition, direction);
+        }
+
+        if (hasCapture(checkPosition.row, checkPosition.column, pieceColor)) {
+            capture = squares[checkPosition.row][checkPosition.column].name;
+        }
+
+
+        return { moves: moves, capture: capture}
     }
 
-    function setPossibleKingMoves(position, pieceColor) {
+    function moveInDirection(position, direction) {
+        switch(direction) {
+            case moveDirection.UP:
+                position.row--;
+                break;
+            case moveDirection.DOWN:
+                position.row++;
+                break;
+            case moveDirection.LEFT:
+                position.column--;
+                break;
+            case moveDirection.RIGHT:
+                position.column++;
+                break;
+            default:
+                break;
+        }
+
+        return position;
+    }
+
+    function getPossibleQueenMoves(position, pieceColor) {
+        
+        let diagonalMoves = getPossibleBishopMoves(position, pieceColor);
+        let vertandHorizMoves = getPossibleRookMoves(position, pieceColor);
+
+        return { moves: diagonalMoves.moves.union(vertandHorizMoves.moves),
+                 captures: diagonalMoves.captures.union(vertandHorizMoves.captures)
+                };
+
+    }
+
+    function getPossibleKingMoves(position, pieceColor) {
 
          let reachablePositions = [
             {row: position.row - 1, column: position.column - 1},
@@ -355,8 +429,7 @@ export default function Board() {
             }
         }
 
-        setPossibleMoves(moves);
-        setPossibleCaptures(captures);
+        return {moves: moves, captures: captures};
     }
 
     function isOnBoard(r, c) {
