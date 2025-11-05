@@ -4,6 +4,23 @@ import { useState } from 'react';
 import { InitialPiecePositionMap } from "./InitialPiecePositionMap.js";
 import { PieceType } from "./Pieces/PieceType.js";
 import { PieceColor } from "./Pieces/Piece.js";
+import "../styles.css";
+
+/*
+TODO:
+-start new game/reset button
+-pawn reaching the end behavior
+-enforcing turns (can only move player's color on their turn)
+-castle behavior
+-check behavior
+    -when your king is in check, only allow moves that break check
+    -visual indiciation of when you're in check
+    -checkmate == winner/end the game
+-timer
+-piece graveyard
+-fix square highlighting to not just be the top corner
+-Host online and allow two people across the internet play the same game
+*/ 
 
 const moveDirection = {
     UP: "UP",
@@ -18,6 +35,7 @@ export default function Board() {
     const [possibleMoves, setPossibleMoves] = useState(new Set());
     const [possibleCaptures, setPossibleCaptures] = useState(new Set());
     const [selectedSquare, setSelectedSquare] = useState(null);
+    const [showPieceSelector, setShowPieceSelector] = useState(false);
 
     const selectSquare = (square) => {
 
@@ -53,6 +71,16 @@ export default function Board() {
 
             deselectSquare();
         }
+        else if (isPawnTransformationMove(selectedSquare, square)) {
+            setShowPieceSelector(true);
+            // You're in the middle of figuring out what the piece selector should look like
+            //and how it should work and stuff
+        }
+    }
+
+    const newGameClick = () => {
+        let newBoard = getNewBoard();
+        setSquares(newBoard);
     }
 
     return (
@@ -73,6 +101,12 @@ export default function Board() {
                     ))}
                 </div>
             ))}
+
+            <div className="controlsContainer">
+                <button onClick={newGameClick}>
+                    New Game
+                </button>
+            </div>
         </div>
     );
 
@@ -201,7 +235,7 @@ export default function Board() {
         }
         else {
             if (squares[position.row+1][position.column].piece === null) {
-                moves.add(squares[position.row+1][position.column]);
+                moves.add(squares[position.row+1][position.column].name);
                 if (isFirstMove && squares[position.row+2][position.column].piece === null) {
                     moves.add(squares[position.row+2][position.column].name);
                 }
@@ -438,6 +472,22 @@ export default function Board() {
 
     function hasCapture(r, c, pieceColor) {
         return isOnBoard(r, c) && squares[r][c].piece && squares[r][c].piece.color !== pieceColor;
+    }
+
+    function isPawnTransformationMove(selectedSquare, targetSquare) {
+        if (selectedSquare.piece.type === PieceType.PAWN) {
+            if (selectedSquare.piece.color === PieceColor.BLACK
+                && targetSquare.position.row === 7) {
+                    return true;
+                }
+
+            if (selectedSquare.piece.color === PieceColor.WHITE
+                && targetSquare.position.row === 0) {
+                    return true;
+                }
+        }
+
+        return false;
     }
 
 }

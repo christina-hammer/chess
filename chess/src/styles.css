@@ -21,6 +21,10 @@
     margin: 12px;
 }
 
+.controlsContainer {
+    margin: 32px;
+}
+
 .piece {
     font-size: 60px;
     text-align: center;

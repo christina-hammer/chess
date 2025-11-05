@@ -4,11 +4,13 @@ import "../styles.css";
 
 export default function Page() {
 
+
     return (
         <div>
             <div className="boardContainer">
-                <Board/>
+                <Board />
             </div>
+            
         </div>
     );
 }
