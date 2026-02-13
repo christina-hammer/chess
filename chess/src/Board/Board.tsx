@@ -2,8 +2,10 @@ import Square, {colors} from "./Square/Square.js";
 import { columnToLetter, rowToNumber } from "./SquareNameMap.js";
 import { useState } from 'react';
 import { InitialPiecePositionMap } from "./InitialPiecePositionMap.js";
-import { PieceType } from "./Pieces/PieceType.js";
+import { PieceType, Piece } from "./Pieces/PieceType.js";
 import { PieceColor } from "./Pieces/Piece.js";
+import  PieceSelector  from "./PieceSelector.js";
+import { SquareType } from "./Square/SquareType.js";
 import "../styles.css";
 
 /*
@@ -22,6 +24,11 @@ TODO:
 -Host online and allow two people across the internet play the same game
 */ 
 
+export type Position = {
+    row: number;
+    column: number;
+};
+
 const moveDirection = {
     UP: "UP",
     DOWN: "DOWN",
@@ -31,14 +38,16 @@ const moveDirection = {
 
 export default function Board() {
 
-    const [squares, setSquares] = useState(getNewBoard());
+    const [squares, setSquares] = useState<SquareType[][]>(getNewBoard());
     const [possibleMoves, setPossibleMoves] = useState(new Set());
     const [possibleCaptures, setPossibleCaptures] = useState(new Set());
-    const [selectedSquare, setSelectedSquare] = useState(null);
+    const [selectedSquare, setSelectedSquare] = useState<SquareType | null>(null);
     const [showPieceSelector, setShowPieceSelector] = useState(false);
+    const [pieceSelectorColor, setPieceSelectorColor,] = useState("");
 
-    const selectSquare = (square) => {
+    const selectSquare = (square: SquareType) => {
 
+        
         if ((!selectedSquare || selectedSquare.name !== square.name)
             && square.piece 
             && !possibleMoves.has(square.name) && !possibleCaptures.has(square.name)
@@ -46,36 +55,44 @@ export default function Board() {
             setSelectedSquare(square);
             setPossibleMovesAndCaptures(square.position, square.piece);
         }
-        else if (selectedSquare.name === square.name) {
+        else if (selectedSquare && selectedSquare.name === square.name) {
             deselectSquare();
         }
-        else if (possibleCaptures.has(square.name)
-                || possibleMoves.has(square.name)) {
+        else if (selectedSquare && (possibleCaptures.has(square.name)
+                || possibleMoves.has(square.name))) {
             
-
-            let newSquares = squares;
-
-            for (let i = 0; i < newSquares.length; i++) {
-                for (let j = 0; j < newSquares[i].length; j++) {
-                    if (newSquares[i][j].name === selectedSquare.name) {
-                    newSquares[i][j].piece = null;
-                }
-                else if (newSquares[i][j].name === square.name) {
-                    newSquares[i][j].piece = selectedSquare.piece;
-                }
-                }
-                
-            }
+            const newSquares = squares;
+            
+            newSquares[selectedSquare.position.row][selectedSquare.position.column].piece = null;
+            newSquares[square.position.row][square.position.column].piece = selectedSquare.piece;
 
             setSquares(newSquares);
 
-            deselectSquare();
+            if (selectedSquare.piece && isPawnTransformationMove(selectedSquare, square)) {
+                setShowPieceSelector(true);
+                setPieceSelectorColor(selectedSquare.piece.color)
+                // You're in the middle of figuring out what the piece selector should look like
+                //and how it should work and stuff
+            }
+            else {
+                deselectSquare();
+            }
         }
-        else if (isPawnTransformationMove(selectedSquare, square)) {
-            setShowPieceSelector(true);
-            // You're in the middle of figuring out what the piece selector should look like
-            //and how it should work and stuff
+    }
+
+    const transformPawn = (pieceType: string, pieceColor: string) => {
+        
+        if (selectedSquare) {
+            let newSquares = squares;
+
+            newSquares[selectedSquare.position.row][selectedSquare.position.column].piece = {
+                type: pieceType,
+                color: pieceColor
+            };
+
+            setSquares(newSquares);
         }
+        
     }
 
     const newGameClick = () => {
@@ -85,16 +102,17 @@ export default function Board() {
 
     return (
         <div>
+            {showPieceSelector 
+            && <PieceSelector 
+                pieceColor={pieceSelectorColor}
+                selectPiece={transformPawn}/>}
             {squares.map((row)=> (
                 <div className="d-flex">
                     {row.map((square) => (
                         <Square 
                             key={square.name}
-                            color = {square.color}
-                            name={square.name}
-                            position = {square.position}
                             selected = {selectedSquare ? square.name === selectedSquare.name : false}
-                            piece = {square.piece} 
+                            square={square}
                             possibleMove = {possibleMoves.has(square.name)}
                             possibleCapture = {possibleCaptures.has(square.name)}
                             selectSquare={selectSquare}/>
@@ -111,8 +129,8 @@ export default function Board() {
     );
 
 
-    function getNewBoard() {
-        const squares = [];
+    function getNewBoard(): SquareType[][] {
+        const squares: SquareType[][] = [];
 
         for (let i = 0; i < 8; i++) {
             squares[i] = [];
@@ -130,7 +148,7 @@ export default function Board() {
         setPossibleCaptures(new Set());
     }
 
-    function getNewSquare(row, column) {
+    function getNewSquare(row: number, column: number): SquareType {
 
         let color = getSquareColor(row, column);
         let name = getSquarePositionName(row, column);
@@ -147,7 +165,7 @@ export default function Board() {
         };
     }
 
-    function getSquareColor(row, column) {
+    function getSquareColor(row: number, column:number): string {
         if (row%2 === 0) {
             return column%2 === 0 ? colors.WHITE : colors.BLACK;
         }
@@ -156,11 +174,11 @@ export default function Board() {
         }
     }
 
-    function getSquarePositionName(row, column) {
+    function getSquarePositionName(row: number, column: number): string {
         return columnToLetter[column] + rowToNumber[row]
     }
 
-    function setPossibleMovesAndCaptures(selectedPosition, selectedPiece) {
+    function setPossibleMovesAndCaptures(selectedPosition: Position, selectedPiece: Piece) {
         
         let movesAndCaptures = {moves: new Set(), captures: new Set()};
 
@@ -201,7 +219,7 @@ export default function Board() {
         setPossibleCaptures(movesAndCaptures.captures);
     }
 
-    function getPossiblePawnMoves(position, pieceColor, isFirstMove) {
+    function getPossiblePawnMoves(position: Position, pieceColor: string, isFirstMove: boolean) {
     
         let moves = new Set();
         let captures = new Set();
@@ -218,7 +236,7 @@ export default function Board() {
 
             if (position.column !== 0) {
                 if (squares[position.row - 1][position.column - 1].piece
-                    && squares[position.row - 1][position.column - 1].piece.color !== pieceColor)
+                    && squares[position.row - 1][position.column - 1].piece?.color !== pieceColor)
                 {
                     let name = squares[position.row-1][position.column-1].name;
                     captures.add(name);
@@ -226,7 +244,7 @@ export default function Board() {
             }
             if (position.column !== 7) {
                 if (squares[position.row-1][position.column+1].piece 
-                    && squares[position.row-1][position.column+1].piece.color !== pieceColor
+                    && squares[position.row-1][position.column+1].piece?.color !== pieceColor
                 ) {
                     let name = squares[position.row-1][position.column+1].name;
                     captures.add(name);
@@ -241,8 +259,8 @@ export default function Board() {
                 }
             }
             if (position.column !== 0) {
-                if (squares[position.row +1][position.column - 1].piece 
-                    && squares[position.row+1][position.column - 1].piece.color !== pieceColor
+                if (squares[position.row +1][position.column - 1].piece !== null
+                    && squares[position.row+1][position.column - 1].piece?.color !== pieceColor
                 ) {
                     let name = squares[position.row+1][position.column - 1];
                     captures.add(name);
@@ -250,7 +268,7 @@ export default function Board() {
             }
             if (position.column !== 7) {
                 if (squares[position.row+1][position.column+1].piece 
-                    && squares[position.row+1][position.column+1].piece.color !== pieceColor
+                    && squares[position.row+1][position.column+1].piece?.color !== pieceColor
                 ) {
                     let name = squares[position.row+1][position.column+1].name;
                     captures.add(name);
@@ -261,7 +279,7 @@ export default function Board() {
         return { moves: moves, captures: captures };
     }
 
-    function getPossibleKnightMoves(position, pieceColor) {
+    function getPossibleKnightMoves(position: Position, pieceColor: string) {
         
         let reachablePositions = [
             {row: position.row - 2, column: position.column - 1},
@@ -283,7 +301,7 @@ export default function Board() {
             }
 
             if (squares[pos.row][pos.column].piece
-                && squares[pos.row][pos.column].piece.color !== pieceColor
+                && squares[pos.row][pos.column].piece?.color !== pieceColor
             ) {
                 captures.add(squares[pos.row][pos.column].name);
             }
@@ -296,7 +314,7 @@ export default function Board() {
         
     }
 
-    function getPossibleBishopMoves(position, pieceColor) {
+    function getPossibleBishopMoves(position: Position, pieceColor: string) {
 
 
         let upRight = bishopMoveHelper(position, pieceColor, true, true);
@@ -325,7 +343,7 @@ export default function Board() {
 
     }
 
-    function bishopMoveHelper(position, pieceColor, goingUp, goingRight) {
+    function bishopMoveHelper(position: Position, pieceColor: string, goingUp: boolean, goingRight: boolean) {
         let moves = new Set();
         let capture = null;
 
@@ -348,7 +366,7 @@ export default function Board() {
         return {moves: moves, capture: capture}
     }
 
-    function getPossibleRookMoves(position, pieceColor) {
+    function getPossibleRookMoves(position: Position, pieceColor: string) {
         
         let up = rookMoveHelper(position, pieceColor, moveDirection.UP);
         let down = rookMoveHelper(position, pieceColor,moveDirection.DOWN);
@@ -374,7 +392,7 @@ export default function Board() {
         return { moves: moves, captures: captures };
     }
 
-    function rookMoveHelper(position, pieceColor, direction) {
+    function rookMoveHelper(position: Position, pieceColor: string, direction: string) {
 
         let moves = new Set();
         let capture = null;
@@ -400,7 +418,7 @@ export default function Board() {
         return { moves: moves, capture: capture}
     }
 
-    function moveInDirection(position, direction) {
+    function moveInDirection(position: Position, direction: string): Position {
         switch(direction) {
             case moveDirection.UP:
                 position.row--;
@@ -421,7 +439,7 @@ export default function Board() {
         return position;
     }
 
-    function getPossibleQueenMoves(position, pieceColor) {
+    function getPossibleQueenMoves(position: Position, pieceColor: string) {
         
         let diagonalMoves = getPossibleBishopMoves(position, pieceColor);
         let vertandHorizMoves = getPossibleRookMoves(position, pieceColor);
@@ -432,7 +450,7 @@ export default function Board() {
 
     }
 
-    function getPossibleKingMoves(position, pieceColor) {
+    function getPossibleKingMoves(position: Position, pieceColor: string) {
 
          let reachablePositions = [
             {row: position.row - 1, column: position.column - 1},
@@ -454,7 +472,7 @@ export default function Board() {
             }
 
             if (squares[pos.row][pos.column].piece
-                && squares[pos.row][pos.column].piece.color !== pieceColor
+                && squares[pos.row][pos.column].piece?.color !== pieceColor
             ) {
                 captures.add(squares[pos.row][pos.column].name);
             }
@@ -466,15 +484,19 @@ export default function Board() {
         return {moves: moves, captures: captures};
     }
 
-    function isOnBoard(r, c) {
+    function isOnBoard(r: number, c:number): boolean {
         return r >= 0 && r < 8 && c >= 0 && c < 8;
     }
 
-    function hasCapture(r, c, pieceColor) {
-        return isOnBoard(r, c) && squares[r][c].piece && squares[r][c].piece.color !== pieceColor;
+    function hasCapture(r: number, c: number, pieceColor: string): boolean {
+        return isOnBoard(r, c) && Boolean(squares[r][c].piece) && squares[r][c].piece?.color !== pieceColor;
     }
 
-    function isPawnTransformationMove(selectedSquare, targetSquare) {
+    function isPawnTransformationMove(selectedSquare: SquareType, targetSquare: SquareType): boolean {
+        if (!selectedSquare.piece) {
+            return false;
+        }
+        
         if (selectedSquare.piece.type === PieceType.PAWN) {
             if (selectedSquare.piece.color === PieceColor.BLACK
                 && targetSquare.position.row === 7) {

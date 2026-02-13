@@ -53,3 +53,9 @@
 .possibleCaptureSquare {
     outline: 3px solid darkmagenta;
 }
+
+.pieceSelector {
+    background-color: white;
+    z-index:100;
+    position: absolute;
+}

@@ -1,28 +1,20 @@
-import '../../styles.css';
-import { PieceType } from './PieceType.js';
+import { PieceColor } from "./Piece.js";
 
-export const PieceColor = {
-    WHITE: "white",
-    BLACK: "black"
+export type Piece = {
+    color: string;
+    type: string;
+}
+
+export const PieceType = {
+    PAWN: "pawn",
+    KNIGHT: "knight",
+    BISHOP: "bishop",
+    ROOK: "rook",
+    QUEEN: "queen",
+    KING: "king"
 };
 
-export default function Piece(props) {
-
-    return (
-        <div className={getClass(props.color)}>
-            {getPiece(props.type, props.color)}
-        </div>
-    );
-}
-
-function getClass(color) {
-    if (color === PieceColor.WHITE) {
-        return "piece pieceWhite";
-    }
-    return "piece pieceBlack";
-}
-
-function getPiece(type, color) {
+export function getPiece(type: string, color: string) {
     switch(type) {
         case PieceType.PAWN:
             return "♙";
@@ -40,4 +32,3 @@ function getPiece(type, color) {
             return "";
     }
 }
-
