@@ -1,11 +1,11 @@
-import Square, {colors} from "./Square/Square.js";
-import { columnToLetter, rowToNumber } from "./SquareNameMap.js";
+import Square, {colors} from "./Square/Square";
+import { columnToLetter, rowToNumber } from "./SquareNameMap";
 import { useState } from 'react';
-import { InitialPiecePositionMap } from "./InitialPiecePositionMap.js";
-import { PieceType, Piece } from "./Pieces/PieceType.js";
-import { PieceColor } from "./Pieces/Piece.js";
-import  PieceSelector  from "./PieceSelector.js";
-import { SquareType } from "./Square/SquareType.js";
+import { InitialPiecePositionMap } from "./InitialPiecePositionMap";
+import { PieceType, Piece } from "./Pieces/PieceType";
+import { PieceColor } from "./Pieces/Piece";
+import  PieceSelector  from "./PieceSelector";
+import { SquareType } from "./Square/SquareType";
 import "../styles.css";
 
 /*
@@ -36,11 +36,21 @@ const moveDirection = {
     RIGHT: "RIGHT"
 };
 
+type PossibleMoves = {
+    moves: Set<string>;
+    captures: Set<string>;
+}
+
+type PossibleDirectionMoves = {
+    moves: Set<string>;
+    capture: string;
+};
+
 export default function Board() {
 
     const [squares, setSquares] = useState<SquareType[][]>(getNewBoard());
-    const [possibleMoves, setPossibleMoves] = useState(new Set());
-    const [possibleCaptures, setPossibleCaptures] = useState(new Set());
+    const [possibleMoves, setPossibleMoves] = useState(new Set<string>());
+    const [possibleCaptures, setPossibleCaptures] = useState(new Set<string>());
     const [selectedSquare, setSelectedSquare] = useState<SquareType | null>(null);
     const [showPieceSelector, setShowPieceSelector] = useState(false);
     const [pieceSelectorColor, setPieceSelectorColor,] = useState("");
@@ -62,21 +72,23 @@ export default function Board() {
                 || possibleMoves.has(square.name))) {
             
             const newSquares = squares;
-            
-            newSquares[selectedSquare.position.row][selectedSquare.position.column].piece = null;
+            const selectedPiece: Piece | null = selectedSquare.piece;
+
             newSquares[square.position.row][square.position.column].piece = selectedSquare.piece;
+            newSquares[selectedSquare.position.row][selectedSquare.position.column].piece = null;
+            
 
             setSquares(newSquares);
 
-            if (selectedSquare.piece && isPawnTransformationMove(selectedSquare, square)) {
+            if (selectedPiece && isPawnTransformationMove(selectedPiece, square)) {
                 setShowPieceSelector(true);
-                setPieceSelectorColor(selectedSquare.piece.color)
-                // You're in the middle of figuring out what the piece selector should look like
-                //and how it should work and stuff
+                setPieceSelectorColor(selectedPiece.color)
             }
             else {
                 deselectSquare();
             }
+
+            
         }
     }
 
@@ -106,8 +118,8 @@ export default function Board() {
             && <PieceSelector 
                 pieceColor={pieceSelectorColor}
                 selectPiece={transformPawn}/>}
-            {squares.map((row)=> (
-                <div className="d-flex">
+            {squares.map((row, idx)=> (
+                <div className="d-flex" key={`row-div-${idx}`}>
                     {row.map((square) => (
                         <Square 
                             key={square.name}
@@ -133,10 +145,11 @@ export default function Board() {
         const squares: SquareType[][] = [];
 
         for (let i = 0; i < 8; i++) {
-            squares[i] = [];
+            const tempArr: SquareType[] = [];
             for (let j = 0; j < 8; j++) {
-                squares[i].push(getNewSquare(i, j));
+                tempArr.push(getNewSquare(i, j));
             }
+            squares[i] = tempArr;
         }
 
         return squares;
@@ -144,14 +157,14 @@ export default function Board() {
 
     function deselectSquare() {
         setSelectedSquare(null);
-        setPossibleMoves(new Set());
-        setPossibleCaptures(new Set());
+        setPossibleMoves(new Set<string>());
+        setPossibleCaptures(new Set<string>());
     }
 
     function getNewSquare(row: number, column: number): SquareType {
 
-        let color = getSquareColor(row, column);
-        let name = getSquarePositionName(row, column);
+        const color = getSquareColor(row, column);
+        const name = getSquarePositionName(row, column);
 
         return {
             id: row*10 + column,
@@ -161,7 +174,7 @@ export default function Board() {
                 column: column
             },
             color: color,
-            piece: InitialPiecePositionMap[name] || null
+            piece: InitialPiecePositionMap[name as keyof typeof InitialPiecePositionMap] || null
         };
     }
 
@@ -175,12 +188,12 @@ export default function Board() {
     }
 
     function getSquarePositionName(row: number, column: number): string {
-        return columnToLetter[column] + rowToNumber[row]
+        return columnToLetter[column as keyof typeof columnToLetter] + rowToNumber[row as keyof typeof rowToNumber];
     }
 
     function setPossibleMovesAndCaptures(selectedPosition: Position, selectedPiece: Piece) {
         
-        let movesAndCaptures = {moves: new Set(), captures: new Set()};
+        let movesAndCaptures = {moves: new Set<string>(), captures: new Set<string>()};
 
         switch(selectedPiece.type) {
             case PieceType.PAWN:
@@ -219,10 +232,10 @@ export default function Board() {
         setPossibleCaptures(movesAndCaptures.captures);
     }
 
-    function getPossiblePawnMoves(position: Position, pieceColor: string, isFirstMove: boolean) {
+    function getPossiblePawnMoves(position: Position, pieceColor: string, isFirstMove: boolean): PossibleMoves {
     
-        let moves = new Set();
-        let captures = new Set();
+        let moves = new Set<string>();
+        let captures = new Set<string>();
         
         if (pieceColor === PieceColor.WHITE) {
             let checkSquare = squares[position.row - 1][position.column];
@@ -262,7 +275,7 @@ export default function Board() {
                 if (squares[position.row +1][position.column - 1].piece !== null
                     && squares[position.row+1][position.column - 1].piece?.color !== pieceColor
                 ) {
-                    let name = squares[position.row+1][position.column - 1];
+                    let name = squares[position.row+1][position.column - 1].name;
                     captures.add(name);
                 }
             }
@@ -279,7 +292,7 @@ export default function Board() {
         return { moves: moves, captures: captures };
     }
 
-    function getPossibleKnightMoves(position: Position, pieceColor: string) {
+    function getPossibleKnightMoves(position: Position, pieceColor: string): PossibleMoves {
         
         let reachablePositions = [
             {row: position.row - 2, column: position.column - 1},
@@ -292,8 +305,8 @@ export default function Board() {
             {row: position.row - 1, column: position.column - 2}
         ];
 
-        let moves = new Set();
-        let captures = new Set();
+        let moves = new Set<string>();
+        let captures = new Set<string>();
 
         for (let pos of reachablePositions) {
             if (pos.row < 0 || pos.row > 7 || pos.column < 0 || pos.column > 7) {
@@ -314,7 +327,7 @@ export default function Board() {
         
     }
 
-    function getPossibleBishopMoves(position: Position, pieceColor: string) {
+    function getPossibleBishopMoves(position: Position, pieceColor: string): PossibleMoves {
 
 
         let upRight = bishopMoveHelper(position, pieceColor, true, true);
@@ -322,18 +335,18 @@ export default function Board() {
         let downRight = bishopMoveHelper(position, pieceColor, false, true);
         let downLeft = bishopMoveHelper(position, pieceColor, false, false);
 
-         let captures = new Set();
+         let captures = new Set<string>();
 
-        if (upRight.capture) {
+        if (upRight.capture !== "") {
             captures.add(upRight.capture);
         }
-        if (upLeft.capture) {
+        if (upLeft.capture !== "") {
             captures.add(upLeft.capture);
         }
-        if (downRight.capture) {
+        if (downRight.capture !== "") {
             captures.add(downRight.capture);
         }
-        if (downLeft.capture) {
+        if (downLeft.capture !== "") {
             captures.add(downLeft.capture);
         }
 
@@ -343,9 +356,9 @@ export default function Board() {
 
     }
 
-    function bishopMoveHelper(position: Position, pieceColor: string, goingUp: boolean, goingRight: boolean) {
-        let moves = new Set();
-        let capture = null;
+    function bishopMoveHelper(position: Position, pieceColor: string, goingUp: boolean, goingRight: boolean): PossibleDirectionMoves {
+        let moves = new Set<string>();
+        let capture = "";
 
         let i = 1;
         let r = goingUp ? position.row - i : position.row + i;
@@ -366,36 +379,36 @@ export default function Board() {
         return {moves: moves, capture: capture}
     }
 
-    function getPossibleRookMoves(position: Position, pieceColor: string) {
+    function getPossibleRookMoves(position: Position, pieceColor: string): PossibleMoves {
         
         let up = rookMoveHelper(position, pieceColor, moveDirection.UP);
         let down = rookMoveHelper(position, pieceColor,moveDirection.DOWN);
         let left = rookMoveHelper(position, pieceColor, moveDirection.LEFT);
         let right = rookMoveHelper(position, pieceColor, moveDirection.RIGHT);
 
-        let moves = new Set([...up.moves, ...down.moves, ...left.moves, ...right.moves]);
-        let captures = new Set();
+        let moves = new Set<string>([...up.moves, ...down.moves, ...left.moves, ...right.moves]);
+        let captures = new Set<string>();
 
-        if (up.capture) {
+        if (up.capture !== "") {
             captures.add(up.capture);
         }
-        if (down.capture) {
+        if (down.capture !== "") {
             captures.add(down.capture);
         }
-        if (left.capture) {
+        if (left.capture !== "") {
             captures.add(left.capture);
         }
-        if (right.capture) {
+        if (right.capture !== "") {
             captures.add(right.capture);
         }
 
         return { moves: moves, captures: captures };
     }
 
-    function rookMoveHelper(position: Position, pieceColor: string, direction: string) {
+    function rookMoveHelper(position: Position, pieceColor: string, direction: string): PossibleDirectionMoves {
 
-        let moves = new Set();
-        let capture = null;
+        let moves = new Set<string>();
+        let capture = "";
 
         let checkPosition = {
             row: position.row,
@@ -439,10 +452,10 @@ export default function Board() {
         return position;
     }
 
-    function getPossibleQueenMoves(position: Position, pieceColor: string) {
+    function getPossibleQueenMoves(position: Position, pieceColor: string): PossibleMoves {
         
-        let diagonalMoves = getPossibleBishopMoves(position, pieceColor);
-        let vertandHorizMoves = getPossibleRookMoves(position, pieceColor);
+        const diagonalMoves: PossibleMoves = getPossibleBishopMoves(position, pieceColor);
+        const vertandHorizMoves: PossibleMoves = getPossibleRookMoves(position, pieceColor);
 
         return { moves: diagonalMoves.moves.union(vertandHorizMoves.moves),
                  captures: diagonalMoves.captures.union(vertandHorizMoves.captures)
@@ -450,7 +463,7 @@ export default function Board() {
 
     }
 
-    function getPossibleKingMoves(position: Position, pieceColor: string) {
+    function getPossibleKingMoves(position: Position, pieceColor: string): PossibleMoves {
 
          let reachablePositions = [
             {row: position.row - 1, column: position.column - 1},
@@ -463,8 +476,8 @@ export default function Board() {
             {row: position.row + 1, column: position.column + 1}
         ];
 
-        let moves = new Set();
-        let captures = new Set();
+        let moves = new Set<string>();
+        let captures = new Set<string>();
 
         for (let pos of reachablePositions) {
             if (!isOnBoard(pos.row, pos.column)) {
@@ -492,18 +505,18 @@ export default function Board() {
         return isOnBoard(r, c) && Boolean(squares[r][c].piece) && squares[r][c].piece?.color !== pieceColor;
     }
 
-    function isPawnTransformationMove(selectedSquare: SquareType, targetSquare: SquareType): boolean {
-        if (!selectedSquare.piece) {
+    function isPawnTransformationMove(selectedPiece: Piece, targetSquare: SquareType): boolean {
+        if (!selectedPiece) {
             return false;
         }
         
-        if (selectedSquare.piece.type === PieceType.PAWN) {
-            if (selectedSquare.piece.color === PieceColor.BLACK
+        if (selectedPiece.type === PieceType.PAWN) {
+            if (selectedPiece.color === PieceColor.BLACK
                 && targetSquare.position.row === 7) {
                     return true;
                 }
 
-            if (selectedSquare.piece.color === PieceColor.WHITE
+            if (selectedPiece.color === PieceColor.WHITE
                 && targetSquare.position.row === 0) {
                     return true;
                 }

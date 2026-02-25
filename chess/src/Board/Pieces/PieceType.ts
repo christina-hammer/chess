@@ -1,4 +1,4 @@
-import { PieceColor } from "./Piece.js";
+import { PieceColor } from "./Piece";
 
 export type Piece = {
     color: string;

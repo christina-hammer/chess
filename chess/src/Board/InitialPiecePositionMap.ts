@@ -1,5 +1,5 @@
-import { PieceType } from "./Pieces/PieceType.js";
-import { PieceColor } from "./Pieces/Piece.js";
+import { PieceType } from "./Pieces/PieceType";
+import { PieceColor } from "./Pieces/Piece";
 
 export const InitialPiecePositionMap = {
     a1: {

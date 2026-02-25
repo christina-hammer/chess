@@ -1,11 +1,16 @@
 import "../styles.css";
-import {PieceType, getPiece} from "./Pieces/PieceType.js";
-import Piece, {PieceColor} from "./Pieces/Piece.js";
+import {PieceType, getPiece} from "./Pieces/PieceType";
+import {PieceColor} from "./Pieces/Piece";
 
-export default function PieceSelector(props) {
+interface PieceSelectorProps {
+    pieceColor: string;
+    selectPiece: (pieceType: string, pieceColor: string) => void;
+}
 
-    const handleClick = (pieceType) => {
-        props.selectPiece(pieceType);
+export default function PieceSelector(props: PieceSelectorProps) {
+
+    const handleClick = (pieceType: string) => {
+        props.selectPiece(pieceType, props.pieceColor);
     }
 
     return (
@@ -28,7 +33,7 @@ export default function PieceSelector(props) {
         </div>
     );
 
-    function getClass() {
+    function getClass(): string {
         if (props.pieceColor === PieceColor.BLACK) {
             return "pieceSelector black-bg";
         }

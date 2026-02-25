@@ -1,4 +1,4 @@
-import Board from "../Board/Board.js"
+import Board from "../Board/Board"
 import "../styles.css";
 
 

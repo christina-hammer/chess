@@ -1,5 +1,5 @@
 import '../../styles.css';
-import { PieceType, getPiece } from './PieceType.js';
+import { getPiece } from './PieceType';
 
 export const PieceColor = {
     WHITE: "white",
@@ -20,7 +20,7 @@ export default function Piece(props: PieceProps) {
     );
 }
 
-function getClass(color: string) {
+function getClass(color: string): string {
     if (color === PieceColor.WHITE) {
         return "piece pieceWhite";
     }
