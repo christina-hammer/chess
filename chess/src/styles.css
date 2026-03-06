@@ -43,15 +43,15 @@
 }
 
 .selectedSquare {
-    outline: 3px solid yellow;
+    border: 3px solid yellow;
 }
 
 .possibleMoveSquare {
-    outline: 3px solid green;
+    border: 3px solid teal;
 }
 
 .possibleCaptureSquare {
-    outline: 3px solid darkmagenta;
+    border: 3px solid darkmagenta;
 }
 
 .pieceSelector {

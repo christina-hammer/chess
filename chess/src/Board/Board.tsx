@@ -10,15 +10,17 @@ import "../styles.css";
 
 /*
 TODO:
--start new game/reset button
--pawn reaching the end behavior
--enforcing turns (can only move player's color on their turn)
+-piece selector larger and centered
 -castle behavior
 -check behavior
     -when your king is in check, only allow moves that break check
     -visual indiciation of when you're in check
     -checkmate == winner/end the game
--timer
+-Timed games:
+    -display timer per player
+    -ability to set time limit
+    -end game if time runs out for player
+-record moves
 -piece graveyard
 -fix square highlighting to not just be the top corner
 -Host online and allow two people across the internet play the same game
@@ -54,6 +56,7 @@ export default function Board() {
     const [selectedSquare, setSelectedSquare] = useState<SquareType | null>(null);
     const [showPieceSelector, setShowPieceSelector] = useState(false);
     const [pieceSelectorColor, setPieceSelectorColor,] = useState("");
+    const [turnColor, setTurnColor] = useState<string>(PieceColor.WHITE);
 
     const selectSquare = (square: SquareType) => {
 
@@ -61,6 +64,7 @@ export default function Board() {
         if ((!selectedSquare || selectedSquare.name !== square.name)
             && square.piece 
             && !possibleMoves.has(square.name) && !possibleCaptures.has(square.name)
+            && square.piece.color === turnColor
         ) {
             setSelectedSquare(square);
             setPossibleMovesAndCaptures(square.position, square.piece);
@@ -83,12 +87,15 @@ export default function Board() {
             if (selectedPiece && isPawnTransformationMove(selectedPiece, square)) {
                 setShowPieceSelector(true);
                 setPieceSelectorColor(selectedPiece.color)
+                setSelectedSquare(square);
+                setPossibleMoves(new Set<string>());
+                setPossibleCaptures(new Set<string>());
             }
             else {
                 deselectSquare();
             }
 
-            
+            setTurnColor(turnColor === PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE);
         }
     }
 
@@ -103,6 +110,8 @@ export default function Board() {
             };
 
             setSquares(newSquares);
+            setSelectedSquare(null);
+            setShowPieceSelector(false);
         }
         
     }
@@ -133,6 +142,7 @@ export default function Board() {
             ))}
 
             <div className="controlsContainer">
+                <p>{turnColor === PieceColor.WHITE ? "White's turn" : "Black's turn"}</p>
                 <button onClick={newGameClick}>
                     New Game
                 </button>
